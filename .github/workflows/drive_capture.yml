@@ -1,0 +1,31 @@
+name: Captura CelesTrak a Google Drive
+
+on:
+  schedule:
+    # Se ejecuta al minuto 0 de cada 2 horas UTC
+    - cron: '0 */2 * * *'
+  workflow_dispatch: # Permite ejecución manual desde GitHub
+
+jobs:
+  descargar-y-subir:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Instalar dependencias
+        run: |
+          pip install requests google-api-python-client google-auth
+
+      - name: Ejecutar script de captura
+        env:
+          GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
+          DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
+        run: |
+          python scripts/upload_drive_celestrak.py
