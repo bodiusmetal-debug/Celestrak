@@ -1,31 +1,25 @@
-name: Captura CelesTrak a Google Drive
+name: Captura CelesTrak a GitHub Artifacts
 
 on:
   schedule:
-    # Se ejecuta al minuto 0 de cada 2 horas UTC
     - cron: '0 */2 * * *'
-  workflow_dispatch: # Permite ejecución manual desde GitHub
+  workflow_dispatch:
 
 jobs:
-  descargar-y-subir:
+  descargar-y-guardar:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Clonar repositorio
-        uses: actions/checkout@v4
+      - name: Descargar datos de CelesTrak
+        run: |
+          TIMESTAMP=$(date -u +"%Y%m%d_%H%M%S_UTC")
+          FILENAME="celestrak_active_${TIMESTAMP}.json"
+          echo "FILENAME=$FILENAME" >> $GITHUB_ENV
+          curl -s -A "Mozilla/5.0 (DataCapture/1.0)" -o $FILENAME "https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=json"
 
-      - name: Configurar Python
-        uses: actions/setup-python@v5
+      - name: Subir a GitHub Artifacts
+        uses: actions/upload-artifact@v4
         with:
-          python-version: '3.12'
-
-      - name: Instalar dependencias
-        run: |
-          pip install requests google-api-python-client google-auth
-
-      - name: Ejecutar script de captura
-        env:
-          GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
-          DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
-        run: |
-          python scripts/upload_drive_celestrak.py
+          name: captura-${{ env.FILENAME }}
+          path: ${{ env.FILENAME }}
+          retention-days: 90
